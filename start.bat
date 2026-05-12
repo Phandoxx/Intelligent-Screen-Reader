@@ -1,5 +1,14 @@
 @echo off
 
+:: check if C++ redist is installed
+reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" /s /f "Visual C++" | findstr "Redistributable" >nul
+if %errorlevel% equ 0 (
+    echo Visual C++ Redistributable is installed.
+) else (
+    echo Visual C++ Redistributable NOT found.
+)
+pause
+
 :: Check if Python is installed
 python --version >nul 2>&1
 if %errorlevel% == 0 (
@@ -14,7 +23,6 @@ if %errorlevel% == 0 (
     goto install_deps_py
 )
 
-:: check if C++ redist is installed
 
 :: Python not found — download and run installer
 echo Python not found. Downloading installer...
