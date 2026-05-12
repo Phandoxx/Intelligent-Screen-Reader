@@ -14,6 +14,8 @@ if %errorlevel% == 0 (
     goto install_deps_py
 )
 
+:: check if C++ redist is installed
+
 :: Python not found — download and run installer
 echo Python not found. Downloading installer...
 curl -o "%TEMP%\python_installer.exe" https://www.python.org/ftp/python/3.12.9/python-3.12.9-amd64.exe
