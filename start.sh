@@ -50,13 +50,18 @@ else
 fi
 
 # ─────────────────────────────────────────────
-# Ensure python3-venv is installed before trying to use it
+# Install system dependencies
 # ─────────────────────────────────────────────
-echo "Ensuring python3-venv is installed..."
 if command -v apt-get &>/dev/null; then
-    # Get the exact python version to install the matching venv package
+    echo "Installing system dependencies..."
     PY_VERSION=$("$PYTHON_CMD" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    sudo apt-get install -y "python${PY_VERSION}-venv" python3-venv 2>/dev/null || sudo apt-get install -y python3-venv
+    sudo apt-get install -y \
+        "python${PY_VERSION}-venv" \
+        python3-venv \
+        python3-tk \
+        tesseract-ocr \
+        espeak \
+        espeak-ng 2>/dev/null || true
 fi
 
 # ─────────────────────────────────────────────
