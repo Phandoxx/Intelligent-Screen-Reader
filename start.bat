@@ -1,13 +1,46 @@
 @echo off
 
-:: check if C++ redist is installed
-reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" /s /f "Visual C++" | findstr "Redistributable" >nul
-if %errorlevel% equ 0 (
-    echo Visual C++ Redistributable is installed.
-) else (
-    echo Visual C++ Redistributable NOT found.
+:: Check if C++ redist is installed (check both 64-bit and 32-bit registry locations)
+reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" /s /f "Visual C++" | findstr "Redistributable" >nul 2>&1
+if %errorlevel% equ 0 goto redist_found
+
+reg query "HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" /s /f "Visual C++" | findstr "Redistributable" >nul 2>&1
+if %errorlevel% equ 0 goto redist_found
+
+:: Not found — download and install
+echo Visual C++ Redistributable NOT found. Downloading...
+curl -L -o "%TEMP%\vc_redist.x64.exe" "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+
+if not exist "%TEMP%\vc_redist.x64.exe" (
+    echo Download failed - file not found. Check your internet connection.
+    pause
+    exit /b 1
 )
-pause
+
+for %%A in ("%TEMP%\vc_redist.x64.exe") do if %%~zA lss 1000000 (
+    echo Download failed - file too small, may be corrupt.
+    pause
+    exit /b 1
+)
+
+echo Installing...
+"%TEMP%\vc_redist.x64.exe" /install /quiet /norestart
+set INST_ERR=%errorlevel%
+
+if "%INST_ERR%"=="0" echo Installation complete.
+if "%INST_ERR%"=="1638" echo Already installed - newer version exists, skipping.
+if "%INST_ERR%"=="3010" echo Installed - reboot required to complete.
+if not "%INST_ERR%"=="0" if not "%INST_ERR%"=="1638" if not "%INST_ERR%"=="3010" (
+    echo Installation failed with error code %INST_ERR%.
+    pause
+    exit /b 1
+)
+goto redist_done
+
+:redist_found
+echo Visual C++ Redistributable is already installed.
+
+:redist_done
 
 :: Check if Python is installed
 python --version >nul 2>&1
