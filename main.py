@@ -71,7 +71,6 @@ def clean_files():
     print("files cleaned")
 
 class SnippingTool:
-    #install_model() just used to test OS detecting
     def __init__(self, callback):
         self.callback = callback
         self.snip_surface = tk.Toplevel()
@@ -160,6 +159,7 @@ use_gtts_var = tk.BooleanVar(value=False)
 tk.Button(root, text="Start Object Recognition", width=25, command=runobjectrecognition).pack(pady=5)
 tk.Button(root, text="Start Text Recognition",   width=25, command=lambda: runtextrecognition(use_gtts_var.get())).pack(pady=5)
 tk.Button(root, text="Stop",                      width=25, command=root.destroy).pack(pady=5)
+tk.Button(root, text="Debug",                      width=25, command=install_model).pack(pady=5) #Debug button, used for testing
 
 tk.Checkbutton(root, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var).pack(pady=5)
 
