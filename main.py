@@ -11,6 +11,7 @@ import sys
 import platform
 import threading
 from playsound3 import playsound
+from tkinter import messagebox
 
 BASE_DIR = Path(__file__).parent
 
@@ -32,6 +33,14 @@ elif OS == "Darwin":
 SPEECH_PATH = BASE_DIR / "speech.mp3"
 SS_PATH     = BASE_DIR / "screenshot" / "ss.jpg"
 TEXT_PATH   = BASE_DIR / "screenshot" / "text.jpg"
+
+def install_model():
+    if OS == "Windows":
+        messagebox.showinfo("Debug","Windows")
+    elif OS == "Linux":
+        messagebox.showinfo("Debug","Linux detected")
+    elif OS == "Darwin":
+        messagebox.showinfo("Debug","MacOS detected")
 
 def speak_text(text, use_gtts):
     if not text.strip():
@@ -62,6 +71,7 @@ def clean_files():
     print("files cleaned")
 
 class SnippingTool:
+    #install_model() just used to test OS detecting
     def __init__(self, callback):
         self.callback = callback
         self.snip_surface = tk.Toplevel()
