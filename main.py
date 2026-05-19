@@ -36,7 +36,7 @@ TEXT_PATH   = BASE_DIR / "screenshot" / "text.jpg"
 
 def install_model():
     if OS == "Windows":
-        messagebox.showinfo("Debug","Windows")
+        messagebox.showinfo("Debug","Windows detected")
     elif OS == "Linux":
         messagebox.showinfo("Debug","Linux detected")
     elif OS == "Darwin":
