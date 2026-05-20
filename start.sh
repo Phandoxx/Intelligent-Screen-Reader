@@ -104,4 +104,5 @@ echo "Installing Python dependencies..."
 # Launch main.py using the venv's Python
 # ─────────────────────────────────────────────
 echo "Launching main.py..."
-nohup "$PYTHON_CMD" "$SCRIPT_DIR/main.py" &>/dev/null &
+# nohup "$PYTHON_CMD" "$SCRIPT_DIR/main.py" &>/dev/null & #no terminal
+"$PYTHON_CMD" "$SCRIPT_DIR/main.py" # terminal
