@@ -61,7 +61,9 @@ if command -v apt-get &>/dev/null; then
         python3-tk \
         tesseract-ocr \
         espeak \
-        espeak-ng 2>/dev/null || true
+        espeak-ng \
+        gnome-screenshot \
+        scrot 2>/dev/null || true
 fi
 
 # ─────────────────────────────────────────────
