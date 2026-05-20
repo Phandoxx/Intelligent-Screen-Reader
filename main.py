@@ -63,7 +63,7 @@ def first_run_check():
     messagebox.showinfo("Debug", f"FLAG_PATH: {FLAG_PATH}\nFlag exists: {flag_exists}")
     if not flag_exists:
         messagebox.showinfo("Debug", "First run detected, installing...")
-        install_model(True)
+        install_model(False)
     else:
         messagebox.showinfo("Debug", "Flag found, skipping install.")
 
