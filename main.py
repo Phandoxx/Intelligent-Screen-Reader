@@ -12,6 +12,7 @@ import platform
 import threading
 from playsound3 import playsound
 from tkinter import messagebox
+import urllib.request
 
 BASE_DIR = Path(__file__).parent
 
@@ -35,12 +36,15 @@ SS_PATH     = BASE_DIR / "screenshot" / "ss.jpg"
 TEXT_PATH   = BASE_DIR / "screenshot" / "text.jpg"
 
 def install_model():
-    if OS == "Windows":
-        messagebox.showinfo("Debug","Windows detected")
-    elif OS == "Linux":
-        messagebox.showinfo("Debug","Linux detected")
-    elif OS == "Darwin":
-        messagebox.showinfo("Debug","MacOS detected")
+    url = "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8x.pt"
+    destination = Path("yolov8x.pt")
+    if not destination.exists():
+        messagebox.showinfo("Installing..." ,"Downloading yolov8x.pt...")
+        urllib.request.urlretrieve(url, destination)
+        messagebox.showinfo("Installing..." ,"Done!")
+    else:
+        messagebox.showinfo("Installing..." ,"yolov8x.pt already exists, skipping download.")
+
 
 def speak_text(text, use_gtts):
     if not text.strip():
@@ -71,6 +75,7 @@ def clean_files():
     print("files cleaned")
 
 class SnippingTool:
+    #install_model() just used to test OS detecting
     def __init__(self, callback):
         self.callback = callback
         self.snip_surface = tk.Toplevel()
@@ -159,7 +164,7 @@ use_gtts_var = tk.BooleanVar(value=False)
 tk.Button(root, text="Start Object Recognition", width=25, command=runobjectrecognition).pack(pady=5)
 tk.Button(root, text="Start Text Recognition",   width=25, command=lambda: runtextrecognition(use_gtts_var.get())).pack(pady=5)
 tk.Button(root, text="Stop",                      width=25, command=root.destroy).pack(pady=5)
-tk.Button(root, text="Debug",                      width=25, command=install_model).pack(pady=5) #Debug button, used for testing
+tk.Button(root, text="Install Model",                      width=25, command=install_model).pack(pady=5)  #Debug button, used for testing
 
 tk.Checkbutton(root, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var).pack(pady=5)
 
@@ -176,3 +181,10 @@ root.bind("<F9>", lambda event: runobjectrecognition())
 root.bind("<F10>", lambda event: root.destroy())
 
 root.mainloop()
+
+#if OS == "Windows":
+#        messagebox.showinfo("Debug","Windows")
+#    elif OS == "Linux":
+#        messagebox.showinfo("Debug","Linux detected")
+#    elif OS == "Darwin":
+#        messagebox.showinfo("Debug","MacOS detected")
