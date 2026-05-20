@@ -92,7 +92,8 @@ python -m pip install gtts
 python -m pip install pyttsx3
 python -m pip install playsound3
 python -m pip install psutil
-start "" pythonw "%~dp0main.py"
+::start "" pythonw "%~dp0main.py" ::no console
+start "" python "%~dp0main.py" :: console on
 goto end
 
 :install_deps_py
@@ -105,7 +106,8 @@ python -m pip install gtts
 python -m pip install pyttsx3
 python -m pip install playsound3
 python -m pip install psutil
-start "" pythonw "%~dp0main.py"
+::start "" pythonw "%~dp0main.py" ::no console
+start "" python "%~dp0main.py" :: console on
 goto end
 
 :end
