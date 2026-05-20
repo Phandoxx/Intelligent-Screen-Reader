@@ -14,6 +14,7 @@ import threading
 from playsound3 import playsound
 from tkinter import messagebox
 import urllib.request
+import subprocess, tempfile
 
 BASE_DIR = Path(__file__).parent
 FLAG_PATH = BASE_DIR / ".model_installed"
@@ -139,7 +140,11 @@ class SnippingTool:
             if OS == "Windows":
                 img = ImageGrab.grab(bbox=(x1, y1, x1 + width, y1 + height))
             elif OS == "Linux":
-                messagebox.showinfo("Debug","Linux detected")
+                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+                    tmp = f.name
+                subprocess.run(['scrot', '-a', f'{x1},{y1},{width},{height}', tmp], check=True)
+                img = Image.open(tmp)
+                os.unlink(tmp)
             elif OS == "Darwin":
                 messagebox.showinfo("Debug","MacOS detected")
             self.callback(img)
