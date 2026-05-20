@@ -15,6 +15,7 @@ from tkinter import messagebox
 import urllib.request
 
 BASE_DIR = Path(__file__).parent
+FLAG_PATH = BASE_DIR / ".model_installed"
 
 # ─────────────────────────────────────────────
 # Set Tesseract path based on OS
@@ -34,16 +35,37 @@ elif OS == "Darwin":
 SPEECH_PATH = BASE_DIR / "speech.mp3"
 SS_PATH     = BASE_DIR / "screenshot" / "ss.jpg"
 TEXT_PATH   = BASE_DIR / "screenshot" / "text.jpg"
-
-def install_model():
+def install_model(silent):
     url = "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8x.pt"
-    destination = Path("yolov8x.pt")
-    if not destination.exists():
-        messagebox.showinfo("Installing..." ,"Downloading yolov8x.pt...")
-        urllib.request.urlretrieve(url, destination)
-        messagebox.showinfo("Installing..." ,"Done!")
+    destination = BASE_DIR / "yolov8x.pt"
+
+    def download():
+        try:
+            if not destination.exists():
+                if not silent:
+                    messagebox.showinfo("Installing...", "Downloading yolov8x.pt...")
+                urllib.request.urlretrieve(url, destination)
+                if not silent:
+                    messagebox.showinfo("Installing...", "Done!")
+            else:
+                if not silent:
+                    messagebox.showinfo("Installing...", "yolov8x.pt already exists, skipping download.")
+            FLAG_PATH.touch()  # only run if no exception
+        except Exception as e:
+            print(f"Download failed: {e}")
+            if not silent:
+                messagebox.showerror("Error", f"Download failed: {e}")
+
+    threading.Thread(target=download, daemon=True).start()
+
+def first_run_check():
+    flag_exists = FLAG_PATH.exists()
+    messagebox.showinfo("Debug", f"FLAG_PATH: {FLAG_PATH}\nFlag exists: {flag_exists}")
+    if not flag_exists:
+        messagebox.showinfo("Debug", "First run detected, installing...")
+        install_model(True)
     else:
-        messagebox.showinfo("Installing..." ,"yolov8x.pt already exists, skipping download.")
+        messagebox.showinfo("Debug", "Flag found, skipping install.")
 
 
 def speak_text(text, use_gtts):
@@ -164,7 +186,7 @@ use_gtts_var = tk.BooleanVar(value=False)
 tk.Button(root, text="Start Object Recognition", width=25, command=runobjectrecognition).pack(pady=5)
 tk.Button(root, text="Start Text Recognition",   width=25, command=lambda: runtextrecognition(use_gtts_var.get())).pack(pady=5)
 tk.Button(root, text="Stop",                      width=25, command=root.destroy).pack(pady=5)
-tk.Button(root, text="Install Model",                      width=25, command=install_model).pack(pady=5)  #Debug button, used for testing
+tk.Button(root, text="Install Model",                      width=25, command=lambda: install_model(False)).pack(pady=5)  #Debug button, used for testing
 
 tk.Checkbutton(root, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var).pack(pady=5)
 
@@ -172,14 +194,8 @@ root.bind("<F8>",  lambda event: runtextrecognition(use_gtts_var.get()))
 root.bind("<F9>",  lambda event: runobjectrecognition())
 root.bind("<F10>", lambda event: root.destroy())
 
-root.mainloop()
 
-tk.Checkbutton(root, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var).pack(pady=5)
-
-root.bind("<F8>", lambda event: runtextrecognition(use_gtts_var.get()))
-root.bind("<F9>", lambda event: runobjectrecognition())
-root.bind("<F10>", lambda event: root.destroy())
-
+root.after(100, first_run_check)
 root.mainloop()
 
 #if OS == "Windows":
