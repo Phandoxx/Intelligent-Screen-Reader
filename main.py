@@ -2,6 +2,7 @@ from ultralytics import YOLO
 from pathlib import Path
 import tkinter as tk
 from PIL import Image
+from PIL import ImageGrab
 import pytesseract
 import pyautogui
 from gtts import gTTS
@@ -135,7 +136,12 @@ class SnippingTool:
         width, height = x2 - x1, y2 - y1
 
         if width > 0 and height > 0:
-            img = pyautogui.screenshot(region=(x1, y1, width, height))
+            if OS == "Windows":
+                img = ImageGrab.grab(bbox=(x1, y1, x1 + width, y1 + height))
+            elif OS == "Linux":
+                messagebox.showinfo("Debug","Linux detected")
+            elif OS == "Darwin":
+                messagebox.showinfo("Debug","MacOS detected")
             self.callback(img)
         else:
             root.deiconify()
