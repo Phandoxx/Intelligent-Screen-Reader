@@ -62,8 +62,10 @@ if command -v apt-get &>/dev/null; then
         tesseract-ocr \
         espeak \
         espeak-ng \
-        gnome-screenshot \
-        scrot 2>/dev/null || true
+        scrot \
+        grim \
+        slurp \
+        spectacle 2>/dev/null || true
 fi
 
 # ─────────────────────────────────────────────
@@ -102,6 +104,7 @@ echo "Installing Python dependencies..."
 "$PIP_CMD" install playsound3
 "$PIP_CMD" install psutil
 "$PIP_CMD" install pi-heif
+
 
 # ─────────────────────────────────────────────
 # Launch main.py using the venv's Python
