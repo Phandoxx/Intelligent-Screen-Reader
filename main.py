@@ -99,57 +99,146 @@ def clean_files():
     print("files cleaned")
 
 class SnippingTool:
-    #install_model() just used to test OS detecting
-    def __init__(self, callback):
-        self.callback = callback
-        self.snip_surface = tk.Toplevel()
-        self.snip_surface.attributes('-alpha', 0.3)
-        self.snip_surface.attributes('-fullscreen', True)
-        self.snip_surface.attributes("-topmost", True)
-        self.snip_surface.config(cursor="cross")
+# ─────────────────────────────────────────────
+# Set Windows Snipping tool
+# ─────────────────────────────────────────────
+    if OS == "Windows":
+        def __init__(self, callback):
+            self.callback = callback
+            self.snip_surface = tk.Toplevel()
+            self.snip_surface.attributes('-alpha', 0.3)
+            self.snip_surface.attributes('-fullscreen', True)
+            self.snip_surface.attributes("-topmost", True)
+            self.snip_surface.config(cursor="cross")
 
-        self.canvas = tk.Canvas(self.snip_surface, cursor="cross", bg="grey")
-        self.canvas.pack(fill="both", expand=True)
+            self.canvas = tk.Canvas(self.snip_surface, cursor="cross", bg="grey")
+            self.canvas.pack(fill="both", expand=True)
 
-        self.start_x = None
-        self.start_y = None
-        self.rect = None
+            self.start_x = None
+            self.start_y = None
+            self.rect = None
 
-        self.canvas.bind("<ButtonPress-1>", self.on_button_press)
-        self.canvas.bind("<B1-Motion>", self.on_move_press)
-        self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
+            self.canvas.bind("<ButtonPress-1>", self.on_button_press)
+            self.canvas.bind("<B1-Motion>", self.on_move_press)
+            self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
 
-    def on_button_press(self, event):
-        self.start_x = event.x
-        self.start_y = event.y
-        self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, 1, 1, outline='red', width=2)
+        def on_button_press(self, event):
+            self.start_x = event.x
+            self.start_y = event.y
+            self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, 1, 1, outline='red', width=2)
 
-    def on_move_press(self, event):
-        cur_x, cur_y = (event.x, event.y)
-        self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
+        def on_move_press(self, event):
+            cur_x, cur_y = (event.x, event.y)
+            self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
 
-    def on_button_release(self, event):
-        end_x, end_y = (event.x, event.y)
-        self.snip_surface.destroy()
+        def on_button_release(self, event):
+            end_x, end_y = (event.x, event.y)
+            self.snip_surface.destroy()
 
-        x1, y1 = min(self.start_x, end_x), min(self.start_y, end_y)
-        x2, y2 = max(self.start_x, end_x), max(self.start_y, end_y)
-        width, height = x2 - x1, y2 - y1
+            x1, y1 = min(self.start_x, end_x), min(self.start_y, end_y)
+            x2, y2 = max(self.start_x, end_x), max(self.start_y, end_y)
+            width, height = x2 - x1, y2 - y1
 
-        if width > 0 and height > 0:
-            if OS == "Windows":
+            if width > 0 and height > 0:
                 img = ImageGrab.grab(bbox=(x1, y1, x1 + width, y1 + height))
-            elif OS == "Linux":
+                self.callback(img)
+            else:
+                root.deiconify()
+# ─────────────────────────────────────────────
+# Set Linux snipping tool
+# ─────────────────────────────────────────────
+    elif OS == "Linux":
+        def __init__(self, callback):
+            self.callback = callback
+            self.snip_surface = tk.Toplevel()
+            self.snip_surface.attributes('-alpha', 0.3)
+            self.snip_surface.attributes('-fullscreen', True)
+            self.snip_surface.attributes("-topmost", True)
+            self.snip_surface.config(cursor="cross")
+
+            self.canvas = tk.Canvas(self.snip_surface, cursor="cross", bg="grey")
+            self.canvas.pack(fill="both", expand=True)
+
+            self.start_x = None
+            self.start_y = None
+            self.rect = None
+
+            self.canvas.bind("<ButtonPress-1>", self.on_button_press)
+            self.canvas.bind("<B1-Motion>", self.on_move_press)
+            self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
+
+        def on_button_press(self, event):
+            self.start_x = event.x
+            self.start_y = event.y
+            self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, 1, 1, outline='red', width=2)
+
+        def on_move_press(self, event):
+            cur_x, cur_y = (event.x, event.y)
+            self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
+
+        def on_button_release(self, event):
+            end_x, end_y = (event.x, event.y)
+            self.snip_surface.destroy()
+
+            x1, y1 = min(self.start_x, end_x), min(self.start_y, end_y)
+            x2, y2 = max(self.start_x, end_x), max(self.start_y, end_y)
+            width, height = x2 - x1, y2 - y1
+
+
+            if width > 0 and height > 0:
                 with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
                     tmp = f.name
                 subprocess.run(['scrot', '-a', f'{x1},{y1},{width},{height}', tmp], check=True)
                 img = Image.open(tmp)
                 os.unlink(tmp)
-            elif OS == "Darwin":
-                messagebox.showinfo("Debug","MacOS detected")
-            self.callback(img)
-        else:
-            root.deiconify()
+            else:
+                root.deiconify()
+# ─────────────────────────────────────────────
+# Set MacOS (Darwin) snipping tool
+# ─────────────────────────────────────────────
+    elif OS == "Darwin":
+        def __init__(self, callback):
+            self.callback = callback
+            self.snip_surface = tk.Toplevel()
+            self.snip_surface.attributes('-alpha', 0.3)
+            self.snip_surface.attributes('-fullscreen', True)
+            self.snip_surface.attributes("-topmost", True)
+            self.snip_surface.config(cursor="cross")
+
+            self.canvas = tk.Canvas(self.snip_surface, cursor="cross", bg="grey")
+            self.canvas.pack(fill="both", expand=True)
+
+            self.start_x = None
+            self.start_y = None
+            self.rect = None
+
+            self.canvas.bind("<ButtonPress-1>", self.on_button_press)
+            self.canvas.bind("<B1-Motion>", self.on_move_press)
+            self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
+
+        def on_button_press(self, event):
+            self.start_x = event.x
+            self.start_y = event.y
+            self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, 1, 1, outline='red', width=2)
+
+        def on_move_press(self, event):
+            cur_x, cur_y = (event.x, event.y)
+            self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
+
+        def on_button_release(self, event):
+            end_x, end_y = (event.x, event.y)
+            self.snip_surface.destroy()
+
+            x1, y1 = min(self.start_x, end_x), min(self.start_y, end_y)
+            x2, y2 = max(self.start_x, end_x), max(self.start_y, end_y)
+            width, height = x2 - x1, y2 - y1
+
+            if width > 0 and height > 0:
+                img = ImageGrab.grab(bbox=(x1, y1, x1 + width, y1 + height))
+                self.callback(img)
+            else:
+                root.deiconify()
+    
 
 def runobjectrecognition():
     root.withdraw()
