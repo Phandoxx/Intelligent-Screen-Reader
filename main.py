@@ -15,6 +15,7 @@ from playsound3 import playsound
 from tkinter import messagebox
 import urllib.request
 import subprocess, tempfile
+from PIL import ImageTk
 
 BASE_DIR = Path(__file__).parent
 FLAG_PATH = BASE_DIR / ".model_installed"
@@ -148,49 +149,264 @@ class SnippingTool:
 # Set Linux snipping tool
 # ─────────────────────────────────────────────
     elif OS == "Linux":
+        SESSION_TYPE    = os.environ.get("XDG_SESSION_TYPE", "").lower()
+        DESKTOP_SESSION = os.environ.get("DESKTOP_SESSION",  "").lower()
+
         def __init__(self, callback):
             self.callback = callback
-            self.snip_surface = tk.Toplevel()
-            self.snip_surface.attributes('-alpha', 0.3)
-            self.snip_surface.attributes('-fullscreen', True)
-            self.snip_surface.attributes("-topmost", True)
-            self.snip_surface.config(cursor="cross")
+            if SnippingTool.SESSION_TYPE == "wayland":
+                self._init_wayland()
+            else:
+                self._init_x11()
 
-            self.canvas = tk.Canvas(self.snip_surface, cursor="cross", bg="grey")
-            self.canvas.pack(fill="both", expand=True)
+        # ──────────────────────────────────────────────────────────────
+        # WAYLAND
+        # Detect desktop environment and use the appropriate native tool:
+        #   KDE Plasma  → spectacle
+        #   GNOME       → gnome-screenshot
+        #   wlroots     → grim + slurp  (Sway, Hyprland, etc.)
+        #   Unknown     → try each in order
+        # All tools open their own native region selector UI —
+        # no tkinter overlay needed on Wayland.
+        # ──────────────────────────────────────────────────────────────
+        def _init_wayland(self):
+            def _tool_exists(name):
+                return subprocess.run(
+                    ['which', name],
+                    capture_output=True
+                ).returncode == 0
+
+            def capture():
+                try:
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+                        tmp = f.name
+                    os.unlink(tmp)
+
+                    desktop = SnippingTool.DESKTOP_SESSION
+                    captured = False
+
+                    # ── KDE Plasma Wayland ──
+                    if not captured and ('plasma' in desktop or 'kde' in desktop):
+                        if _tool_exists('spectacle'):
+                            result = subprocess.run(
+                                ['spectacle', '-r', '-b', '-n', '-o', tmp],
+                                capture_output=True, text=True
+                            )
+                            if result.returncode == 0 and os.path.exists(tmp):
+                                captured = True
+                            else:
+                                raise Exception(
+                                    f'spectacle failed: {result.stderr.strip()}\n\n'
+                                    'Make sure spectacle is installed:\n'
+                                    '  sudo apt install spectacle'
+                                )
+                        else:
+                            raise FileNotFoundError('spectacle')
+
+                    # ── GNOME Wayland ──
+                    if not captured and 'gnome' in desktop:
+                        if _tool_exists('gnome-screenshot'):
+                            result = subprocess.run(
+                                ['gnome-screenshot', '-a', '-f', tmp],
+                                capture_output=True, text=True
+                            )
+                            if result.returncode == 0 and os.path.exists(tmp):
+                                captured = True
+                            else:
+                                raise Exception(
+                                    f'gnome-screenshot failed: {result.stderr.strip()}\n\n'
+                                    'Make sure gnome-screenshot is installed:\n'
+                                    '  sudo apt install gnome-screenshot'
+                                )
+                        else:
+                            raise FileNotFoundError('gnome-screenshot')
+
+                    # ── wlroots Wayland (Sway, Hyprland, etc.) ──
+                    if not captured and _tool_exists('grim') and _tool_exists('slurp'):
+                        slurp = subprocess.run(
+                            ['slurp'],
+                            capture_output=True, text=True
+                        )
+                        if slurp.returncode != 0:
+                            # User cancelled
+                            root.after(0, root.deiconify)
+                            return
+                        region = slurp.stdout.strip()
+                        result = subprocess.run(
+                            ['grim', '-g', region, tmp],
+                            capture_output=True, text=True
+                        )
+                        if result.returncode == 0 and os.path.exists(tmp):
+                            captured = True
+                        else:
+                            raise Exception(f'grim failed: {result.stderr.strip()}')
+
+                    # ── Unknown Wayland — try everything ──
+                    if not captured:
+                        # Try spectacle
+                        if _tool_exists('spectacle'):
+                            result = subprocess.run(
+                                ['spectacle', '-r', '-b', '-n', '-o', tmp],
+                                capture_output=True, text=True
+                            )
+                            if result.returncode == 0 and os.path.exists(tmp):
+                                captured = True
+
+                        # Try gnome-screenshot
+                        if not captured and _tool_exists('gnome-screenshot'):
+                            result = subprocess.run(
+                                ['gnome-screenshot', '-a', '-f', tmp],
+                                capture_output=True, text=True
+                            )
+                            if result.returncode == 0 and os.path.exists(tmp):
+                                captured = True
+
+                        # Try grim + slurp
+                        if not captured and _tool_exists('grim') and _tool_exists('slurp'):
+                            slurp = subprocess.run(
+                                ['slurp'], capture_output=True, text=True
+                            )
+                            if slurp.returncode == 0:
+                                region = slurp.stdout.strip()
+                                result = subprocess.run(
+                                    ['grim', '-g', region, tmp],
+                                    capture_output=True, text=True
+                                )
+                                if result.returncode == 0 and os.path.exists(tmp):
+                                    captured = True
+
+                        if not captured:
+                            raise FileNotFoundError(
+                                'No supported Wayland screenshot tool found.\n\n'
+                                'Install the one for your desktop:\n'
+                                '  KDE Plasma:         sudo apt install spectacle\n'
+                                '  GNOME:              sudo apt install gnome-screenshot\n'
+                                '  Sway/Hyprland:      sudo apt install grim slurp'
+                            )
+
+                    img = Image.open(tmp).copy()
+                    os.unlink(tmp)
+                    root.after(0, lambda: self.callback(img))
+
+                except subprocess.CalledProcessError:
+                    # User cancelled a native selector
+                    root.after(0, root.deiconify)
+                except FileNotFoundError as e:
+                    name = str(e)
+                    if name in ('spectacle', 'gnome-screenshot'):
+                        msg = (
+                            f'"{name}" is not installed.\n\n'
+                            f'Install it with:\n  sudo apt install {name}'
+                        )
+                    else:
+                        msg = name  # already a full message from the unknown branch
+                    root.after(0, lambda: messagebox.showerror('Missing dependency', msg))
+                    root.after(0, root.deiconify)
+                except Exception as e:
+                    msg = str(e)
+                    root.after(0, lambda: messagebox.showerror('Capture error', msg))
+                    root.after(0, root.deiconify)
+
+            root.withdraw()
+            threading.Thread(target=capture, daemon=True).start()
+
+        # ──────────────────────────────────────────────────────────────
+        # X11
+        # Takes a desktop screenshot before showing the overlay so the
+        # user can see their screen through it. Crops the selected
+        # region from that image — no second scrot call needed.
+        # ──────────────────────────────────────────────────────────────
+        def _init_x11(self):
+            try:
+                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+                    bg_tmp = f.name
+                os.unlink(bg_tmp)
+                subprocess.run(['scrot', bg_tmp], check=True)
+                self.bg_image = Image.open(bg_tmp).copy()
+                os.unlink(bg_tmp)
+            except FileNotFoundError:
+                messagebox.showerror(
+                    'Missing dependency',
+                    'scrot is not installed.\n\n'
+                    'Install it with:\n  sudo apt install scrot\n'
+                    '  sudo pacman -S scrot\n  sudo dnf install scrot'
+                )
+                root.deiconify()
+                return
+            except Exception as e:
+                messagebox.showerror('Capture error', str(e))
+                root.deiconify()
+                return
+
+            screen_w, screen_h = self.bg_image.size
+            self.bg_photo = ImageTk.PhotoImage(self.bg_image)
+
+            self.snip_surface = tk.Toplevel()
+            self.snip_surface.attributes('-fullscreen', True)
+            self.snip_surface.attributes('-topmost', True)
+            self.snip_surface.config(cursor='cross')
+
+            self.canvas = tk.Canvas(
+                self.snip_surface,
+                cursor='cross',
+                highlightthickness=0,
+                width=screen_w,
+                height=screen_h
+            )
+            self.canvas.pack(fill='both', expand=True)
+
+            # Screenshot as background so user can see their screen
+            self.canvas.create_image(0, 0, anchor='nw', image=self.bg_photo)
+            # Dim overlay via stipple — works without a compositor
+            self.canvas.create_rectangle(
+                0, 0, screen_w, screen_h,
+                fill='black', stipple='gray50', outline=''
+            )
 
             self.start_x = None
             self.start_y = None
-            self.rect = None
+            self.rect      = None
+            self.highlight = None
 
-            self.canvas.bind("<ButtonPress-1>", self.on_button_press)
-            self.canvas.bind("<B1-Motion>", self.on_move_press)
-            self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
+            self.canvas.bind('<ButtonPress-1>',   self.on_button_press)
+            self.canvas.bind('<B1-Motion>',       self.on_move_press)
+            self.canvas.bind('<ButtonRelease-1>', self.on_button_release)
+            self.snip_surface.bind('<Escape>', lambda e: self._cancel())
+
+        def _cancel(self):
+            self.snip_surface.destroy()
+            root.deiconify()
 
         def on_button_press(self, event):
             self.start_x = event.x
             self.start_y = event.y
-            self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, 1, 1, outline='red', width=2)
+            self.highlight = self.canvas.create_rectangle(
+                self.start_x, self.start_y, 1, 1,
+                fill='', outline=''
+            )
+            self.rect = self.canvas.create_rectangle(
+                self.start_x, self.start_y, 1, 1,
+                outline='white', width=2, dash=(4, 4)
+            )
 
         def on_move_press(self, event):
-            cur_x, cur_y = (event.x, event.y)
-            self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
+            self.canvas.coords(self.rect,      self.start_x, self.start_y, event.x, event.y)
+            self.canvas.coords(self.highlight, self.start_x, self.start_y, event.x, event.y)
+            self.canvas.tag_raise(self.rect)
 
         def on_button_release(self, event):
-            end_x, end_y = (event.x, event.y)
+            end_x, end_y = event.x, event.y
             self.snip_surface.destroy()
 
-            x1, y1 = min(self.start_x, end_x), min(self.start_y, end_y)
-            x2, y2 = max(self.start_x, end_x), max(self.start_y, end_y)
-            width, height = x2 - x1, y2 - y1
+            x1 = min(self.start_x, end_x)
+            y1 = min(self.start_y, end_y)
+            x2 = max(self.start_x, end_x)
+            y2 = max(self.start_y, end_y)
 
-
-            if width > 0 and height > 0:
-                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
-                    tmp = f.name
-                subprocess.run(['scrot', '-a', f'{x1},{y1},{width},{height}', tmp], check=True)
-                img = Image.open(tmp)
-                os.unlink(tmp)
+            if (x2 - x1) > 0 and (y2 - y1) > 0:
+                # Crop from the pre-captured background — no second scrot call
+                img = self.bg_image.crop((x1, y1, x2, y2))
+                self.callback(img)
             else:
                 root.deiconify()
 # ─────────────────────────────────────────────
@@ -238,40 +454,36 @@ class SnippingTool:
                 self.callback(img)
             else:
                 root.deiconify()
-    
+
 
 def runobjectrecognition():
     root.withdraw()
-
     def process_yolo(img):
         SS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if img.mode == 'RGBA':
+            img = img.convert('RGB')
         img.save(SS_PATH)
         print(f"Image saved. Running YOLO on {SS_PATH}...")
-
         model = YOLO("yolov8x.pt")
         results = model(str(SS_PATH))
-
         root.deiconify()
-        clean_files()
-
+        #clean_files() #remove for testing
     SnippingTool(process_yolo)
 
 def runtextrecognition(use_gtts):
     root.withdraw()
-
     def process_ocr(img):
         TEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if img.mode == 'RGBA':
+            img = img.convert('RGB')
         img.save(TEXT_PATH)
         print(f"Image saved. Running OCR on {TEXT_PATH}...")
-
         text = pytesseract.image_to_string(Image.open(TEXT_PATH))
         print("--- OCR RESULT ---")
         print(text)
         speak_text(text, use_gtts)
-
         root.deiconify()
-        clean_files()
-
+        #clean_files() #remove for testing
     SnippingTool(process_ocr)
 
 # ─────────────────────────────────────────────
