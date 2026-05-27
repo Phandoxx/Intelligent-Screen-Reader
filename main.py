@@ -16,6 +16,7 @@ from tkinter import messagebox
 import urllib.request
 import subprocess, tempfile
 from PIL import ImageTk
+import customtkinter
 
 BASE_DIR = Path(__file__).parent
 FLAG_PATH = BASE_DIR / ".model_installed"
@@ -30,7 +31,7 @@ if OS == "Windows":
 elif OS == "Darwin":
     # Homebrew installs tesseract here on macOS
     pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
-    # Apple Silicon Homebrew path
+    # rootle Silicon Homebrew path
     if not Path(pytesseract.pytesseract.tesseract_cmd).exists():
         pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
 # Linux: tesseract is on PATH by default, no need to set
@@ -161,7 +162,7 @@ class SnippingTool:
 
         # ──────────────────────────────────────────────────────────────
         # WAYLAND
-        # Detect desktop environment and use the appropriate native tool:
+        # Detect desktop environment and use the rootropriate native tool:
         #   KDE Plasma  → spectacle
         #   GNOME       → gnome-screenshot
         #   wlroots     → grim + slurp  (Sway, Hyprland, etc.)
@@ -489,26 +490,33 @@ def runtextrecognition(use_gtts):
 # ─────────────────────────────────────────────
 # Main UI
 # ─────────────────────────────────────────────
-root = tk.Tk()
-root.title("Intelligent Screen Reader")
-root.geometry("300x300")
+customtkinter.set_appearance_mode("System")  
+customtkinter.set_default_color_theme("blue")  
+
+root = customtkinter.CTk()  
+root.geometry("400x300")
 
 use_gtts_var = tk.BooleanVar(value=False)
 
-tk.Button(root, text="Start Object Recognition", width=25, command=runobjectrecognition).pack(pady=5)
-tk.Button(root, text="Start Text Recognition",   width=25, command=lambda: runtextrecognition(use_gtts_var.get())).pack(pady=5)
-tk.Button(root, text="Stop",                      width=25, command=root.destroy).pack(pady=5)
-tk.Button(root, text="Install Model",                      width=25, command=lambda: install_model(False)).pack(pady=5)  #Debug button, used for testing
+ObjectRecogButton = customtkinter.CTkButton(master=root, text="Start Object Recognition", command=runobjectrecognition)
+ObjectRecogButton.pack(pady=5)
 
-tk.Checkbutton(root, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var).pack(pady=5)
+TextRecogButton = customtkinter.CTkButton(master=root, text="Start Text Recognition", command=lambda: runtextrecognition(use_gtts_var.get()))
+TextRecogButton.pack(pady=5)
 
-root.bind("<F8>",  lambda event: runtextrecognition(use_gtts_var.get()))
-root.bind("<F9>",  lambda event: runobjectrecognition())
-root.bind("<F10>", lambda event: root.destroy())
+InstallButton = customtkinter.CTkButton(master=root, text="Install model", command=lambda: install_model(False))
+InstallButton.pack(pady=5)
 
+GttsCheckbox = customtkinter.CTkCheckBox(root, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var)
+GttsCheckbox.pack(pady=10)
+
+StopButton = customtkinter.CTkButton(master=root, text="Stop", command=root.destroy)
+StopButton.pack(pady=20)
 
 root.after(100, first_run_check)
 root.mainloop()
+
+
 
 #if OS == "Windows":
 #        messagebox.showinfo("Debug","Windows")
