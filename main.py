@@ -493,30 +493,65 @@ def runtextrecognition(use_gtts):
 customtkinter.set_appearance_mode("System")  
 customtkinter.set_default_color_theme("green")  
 
-root = customtkinter.CTk()  
+root = customtkinter.CTk()      
 root.geometry("400x300")
 root.title("Intelligent screen reader")
 
 use_gtts_var = tk.BooleanVar(value=False)
 
-ObjectRecogButton = customtkinter.CTkButton(master=root, text="Start Object Recognition", command=runobjectrecognition)
-ObjectRecogButton.pack(pady=5)
+# Create tabview
+tabview = customtkinter.CTkTabview(
+    root,
+    segmented_button_selected_color="#4CAF50",
+    segmented_button_selected_hover_color="#45a049",
+    segmented_button_unselected_color="#2D7A30",
+    segmented_button_unselected_hover_color="#367d39",
+    segmented_button_fg_color="#2D7A30",
+    text_color="black",
+    corner_radius=0,
+)
+tabview.pack(fill="both", expand=True, padx=0, pady=0)
 
-TextRecogButton = customtkinter.CTkButton(master=root, text="Start Text Recognition", command=lambda: runtextrecognition(use_gtts_var.get()))
-TextRecogButton.pack(pady=5)
+# Stretch tabs to full width
+tabview._segmented_button.configure(corner_radius=0)
+tabview._segmented_button.grid_configure(sticky="ew")
+tabview._segmented_button.master.grid_columnconfigure(0, weight=1)
 
-InstallButton = customtkinter.CTkButton(master=root, text="Install model", command=lambda: install_model(False))
+# Add tabs
+tab1 = tabview.add("Settings")
+tab2 = tabview.add("OCR/Object")
+
+# Button style matching
+btn_kwargs = dict(
+    corner_radius=10,
+    fg_color="#4CAF50",
+    hover_color="#45a049",
+    text_color="black",
+)
+
+# Tab 1: Settings 
+InstallButton = customtkinter.CTkButton(master=tab1, text="Install model", command=lambda: install_model(False), **btn_kwargs)
 InstallButton.pack(pady=5)
 
-GttsCheckbox = customtkinter.CTkCheckBox(root, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var)
+GttsCheckbox = customtkinter.CTkCheckBox(tab1, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var)
 GttsCheckbox.pack(pady=10)
 
-StopButton = customtkinter.CTkButton(master=root, text="Stop", command=root.destroy)
-StopButton.pack(pady=20)
+
+# Tab 2: OCR/Object
+ObjectRecogButton = customtkinter.CTkButton(master=tab2, text="Start Object Recognition", command=runobjectrecognition, **btn_kwargs)
+ObjectRecogButton.pack(pady=5)
+
+TextRecogButton = customtkinter.CTkButton(master=tab2, text="Start Text Recognition", command=lambda: runtextrecognition(use_gtts_var.get()), **btn_kwargs)
+TextRecogButton.pack(pady=5)
+
+# Stop button
+tabview.pack(fill="both", expand=True, padx=0, pady=0)
+
+StopButton = customtkinter.CTkButton(master=root, text="Stop", command=root.destroy, **btn_kwargs)
+StopButton.pack(pady=5)
 
 root.after(100, first_run_check)
 root.mainloop()
-
 
 
 #if OS == "Windows":
