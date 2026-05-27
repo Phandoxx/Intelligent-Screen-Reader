@@ -491,7 +491,7 @@ def runtextrecognition(use_gtts):
 # Main UI
 # ─────────────────────────────────────────────
 customtkinter.set_appearance_mode("System")  
-customtkinter.set_default_color_theme("blue")  
+customtkinter.set_default_color_theme("green")  
 
 root = customtkinter.CTk()  
 root.geometry("400x300")
