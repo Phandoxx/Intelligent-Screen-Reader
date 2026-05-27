@@ -104,6 +104,7 @@ echo "Installing Python dependencies..."
 "$PIP_CMD" install playsound3
 "$PIP_CMD" install psutil
 "$PIP_CMD" install pi-heif
+"$PIP_CMD" install customtkinter
 
 
 # ─────────────────────────────────────────────
