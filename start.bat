@@ -92,6 +92,7 @@ python -m pip install gtts
 python -m pip install pyttsx3
 python -m pip install playsound3
 python -m pip install psutil
+python -m pip install customtkinter
 ::start "" pythonw "%~dp0main.py" ::no console
 start "" python "%~dp0main.py" :: console on
 goto end
