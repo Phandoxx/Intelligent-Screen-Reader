@@ -495,6 +495,7 @@ customtkinter.set_default_color_theme("green")
 
 root = customtkinter.CTk()  
 root.geometry("400x300")
+root.title("Intelligent screen reader")
 
 use_gtts_var = tk.BooleanVar(value=False)
 
