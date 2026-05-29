@@ -464,11 +464,25 @@ def runobjectrecognition():
         if img.mode == 'RGBA':
             img = img.convert('RGB')
         img.save(SS_PATH)
-        #set_display_text(f"Image saved. Running YOLO on {SS_PATH}...")
         model = YOLO("yolov8x.pt")
         results = model(str(SS_PATH))
+
+        # Count detected objects
+        from collections import Counter
+        names = model.names
+        counts = Counter()
+        for r in results:
+            for cls in r.boxes.cls.tolist():
+                counts[names[int(cls)]] += 1
+
+        if counts:
+            summary = ", ".join(f"{v} {k}" for k, v in counts.items())
+        else:
+            summary = "No objects detected."
+
+        set_display_text(summary)
+        speak_text(summary, use_gtts_var.get())
         root.deiconify()
-        #clean_files() #remove for testing
     SnippingTool(process_yolo)
 
 def runtextrecognition(use_gtts):
