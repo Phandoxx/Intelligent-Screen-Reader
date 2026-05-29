@@ -52,20 +52,26 @@ fi
 # ─────────────────────────────────────────────
 # Install system dependencies
 # ─────────────────────────────────────────────
-if command -v apt-get &>/dev/null; then
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "Installing system dependencies..."
     PY_VERSION=$("$PYTHON_CMD" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    sudo apt-get install -y \
-        "python${PY_VERSION}-venv" \
-        python3-venv \
-        python3-tk \
-        tesseract-ocr \
-        espeak \
-        espeak-ng \
-        scrot \
-        grim \
-        slurp \
-        spectacle 2>/dev/null || true
+    
+    PKGS=(
+        "python${PY_VERSION}-venv"
+        python3-venv python3-tk tesseract-ocr
+        espeak espeak-ng scrot grim slurp spectacle
+    )
+
+    if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y "${PKGS[@]}" 2>/dev/null || true
+    elif command -v dnf &>/dev/null; then
+        sudo dnf install -y "${PKGS[@]}" 2>/dev/null || true
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -S --noconfirm "${PKGS[@]}" 2>/dev/null || true
+    else
+        echo "Unsupported Linux distro. Please install Python packages manually."
+        exit 1
+    fi
 fi
 
 # ─────────────────────────────────────────────
