@@ -48,7 +48,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     if ! command -v brew &>/dev/null; then
         echo "Homebrew is required. Install it from https://brew.sh"; exit 1
     fi
-    brew install tesseract python-tk libheif
+        brew install tesseract python-tk libheif
     # Note: macOS has built-in TTS (say) and screencapture — no espeak/scrot needed
     echo "macOS dependencies installed."
 
@@ -90,7 +90,15 @@ PIP_CMD="$VENV_DIR/bin/pip"
 # ─────────────────────────────────────────────
 echo "Installing Python dependencies..."
 "$PIP_CMD" install --upgrade pip
+
+echo "Installing Python dependencies..."
+"$PIP_CMD" install --upgrade pip
 "$PIP_CMD" install ultralytics pillow pytesseract pyautogui gtts pyttsx3 playsound3 psutil pi-heif customtkinter
+
+#for macOS: pin numpy and opencv for compatibility (idk why it breaks on latest versions its stupid)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    "$PIP_CMD" install "numpy<2" "opencv-python==4.9.0.80"
+fi
 
 # ─────────────────────────────────────────────
 # macOS: Remind user about permissions
