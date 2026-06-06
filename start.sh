@@ -48,7 +48,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     if ! command -v brew &>/dev/null; then
         echo "Homebrew is required. Install it from https://brew.sh"; exit 1
     fi
-    brew install tesseract python-tk
+    brew install tesseract python-tk libheif
     # Note: macOS has built-in TTS (say) and screencapture — no espeak/scrot needed
     echo "macOS dependencies installed."
 
