@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$SCRIPT_DIR/.venv"
-
-echo "Note: Visual C++ Redistributable check is Windows-only and has been skipped."
 
 # ─────────────────────────────────────────────
 # Check if Python is installed
@@ -19,77 +16,26 @@ elif command -v python &>/dev/null; then
     PYTHON_CMD="python"
 else
     echo "Python not found. Attempting to install..."
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if command -v brew &>/dev/null; then
+            brew install python
+        else
+            echo "Homebrew not found. Installing Homebrew first..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            brew install python
+        fi
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if command -v apt-get &>/dev/null; then
-            sudo apt-get update -y
-            sudo apt-get install -y python3 python3-venv
+            sudo apt-get update -y && sudo apt-get install -y python3 python3-venv
         elif command -v dnf &>/dev/null; then
             sudo dnf install -y python3
         elif command -v pacman &>/dev/null; then
             sudo pacman -Sy --noconfirm python
         else
-            echo "Unsupported Linux distro. Please install Python 3 manually."
-            exit 1
-        fi
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        if command -v brew &>/dev/null; then
-            brew install python
-        else
-            echo "Homebrew not found. Please install Python 3 from https://www.python.org/downloads/"
-            exit 1
+            echo "Unsupported Linux distro. Please install Python 3 manually."; exit 1
         fi
     else
-        echo "Unsupported OS: $OSTYPE. Please install Python 3 manually."
-        exit 1
-    fi
-    PYTHON_CMD="python3"
-    if ! command -v "$PYTHON_CMD" &>/dev/null; then
-        echo "Python installation failed. Please restart your shell and try again."
-        exit 1
-    fi
-fi
-
-#!/bin/bash
-# Get the directory of this script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_DIR="$SCRIPT_DIR/.venv"
-
-echo "Note: Visual C++ Redistributable check is Windows-only and has been skipped."
-
-# ─────────────────────────────────────────────
-# Check if Python is installed
-# ─────────────────────────────────────────────
-PYTHON_CMD=""
-if command -v python3 &>/dev/null; then
-    echo "Python found (python3)."
-    PYTHON_CMD="python3"
-elif command -v python &>/dev/null; then
-    echo "Python found (python)."
-    PYTHON_CMD="python"
-else
-    echo "Python not found. Attempting to install..."
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if command -v apt-get &>/dev/null; then
-            sudo apt-get update -y
-            sudo apt-get install -y python3 python3-venv
-        elif command -v dnf &>/dev/null; then
-            sudo dnf install -y python3
-        elif command -v pacman &>/dev/null; then
-            sudo pacman -Sy --noconfirm python
-        else
-            echo "Unsupported Linux distro. Please install Python 3 manually."
-            exit 1
-        fi
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        if command -v brew &>/dev/null; then
-            brew install python
-        else
-            echo "Homebrew not found. Please install Python 3 from https://www.python.org/downloads/"
-            exit 1
-        fi
-    else
-        echo "Unsupported OS: $OSTYPE. Please install Python 3 manually."
-        exit 1
+        echo "Unsupported OS. Please install Python 3 manually."; exit 1
     fi
     PYTHON_CMD="python3"
 fi
@@ -97,33 +43,34 @@ fi
 # ─────────────────────────────────────────────
 # Install system dependencies
 # ─────────────────────────────────────────────
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    echo "Installing system dependencies..."
-    
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Installing macOS system dependencies via Homebrew..."
+    if ! command -v brew &>/dev/null; then
+        echo "Homebrew is required. Install it from https://brew.sh"; exit 1
+    fi
+    brew install tesseract python-tk
+    # Note: macOS has built-in TTS (say) and screencapture — no espeak/scrot needed
+    echo "macOS dependencies installed."
+
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "Installing Linux system dependencies..."
     if command -v apt-get &>/dev/null; then
         sudo apt-get update -y
         sudo apt-get install -y \
-            python3-tk \
-            python3-venv \
+            python3-tk python3-venv \
             tesseract-ocr \
             espeak espeak-ng \
-            scrot \
-            xclip \
-            libxcb-xinerama0 \
-            libxcb-cursor0
-        echo "System dependencies installed successfully."
-        
+            scrot xclip \
+            libxcb-xinerama0 libxcb-cursor0
     elif command -v dnf &>/dev/null; then
         sudo dnf install -y python3-tkinter python3-venv tesseract-ocr espeak espeak-ng scrot xclip
     elif command -v pacman &>/dev/null; then
         sudo pacman -S --noconfirm tk python-tk tesseract espeak scrot xclip
-    else
-        echo "Unsupported Linux distro. Please install required packages manually."
     fi
 fi
 
 # ─────────────────────────────────────────────
-# Remove broken venv if it exists and recreate
+# Create virtual environment
 # ─────────────────────────────────────────────
 if [ -d "$VENV_DIR" ] && [ ! -f "$VENV_DIR/bin/pip" ]; then
     echo "Removing broken virtual environment..."
@@ -131,19 +78,10 @@ if [ -d "$VENV_DIR" ] && [ ! -f "$VENV_DIR/bin/pip" ]; then
 fi
 
 if [ ! -d "$VENV_DIR" ]; then
-    echo "Creating virtual environment at $VENV_DIR..."
+    echo "Creating virtual environment..."
     "$PYTHON_CMD" -m venv "$VENV_DIR"
-    
-    if [ ! -f "$VENV_DIR/bin/pip" ]; then
-        echo "venv creation failed. Trying to fix..."
-        PY_VERSION=$("$PYTHON_CMD" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-        sudo apt-get install -y "python${PY_VERSION}-venv" 2>/dev/null || true
-        rm -rf "$VENV_DIR"
-        "$PYTHON_CMD" -m venv "$VENV_DIR"
-    fi
 fi
 
-# Use the venv's Python and pip
 PYTHON_CMD="$VENV_DIR/bin/python"
 PIP_CMD="$VENV_DIR/bin/pip"
 
@@ -153,6 +91,16 @@ PIP_CMD="$VENV_DIR/bin/pip"
 echo "Installing Python dependencies..."
 "$PIP_CMD" install --upgrade pip
 "$PIP_CMD" install ultralytics pillow pytesseract pyautogui gtts pyttsx3 playsound3 psutil pi-heif customtkinter
+
+# ─────────────────────────────────────────────
+# macOS: Remind user about permissions
+# ─────────────────────────────────────────────
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo ""
+    echo "⚠️  macOS Note: If pyautogui fails, grant Accessibility & Screen Recording"
+    echo "   permissions to Terminal in System Settings > Privacy & Security."
+    echo ""
+fi
 
 # ─────────────────────────────────────────────
 # Launch main.py
