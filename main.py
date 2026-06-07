@@ -31,7 +31,7 @@ if OS == "Windows":
 elif OS == "Darwin":
     # Homebrew installs tesseract here on macOS
     pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
-    # rootle Silicon Homebrew path
+    # Apple Silicon Homebrew path
     if not Path(pytesseract.pytesseract.tesseract_cmd).exists():
         pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
 # Linux: tesseract is on PATH by default, no need to set
@@ -39,6 +39,7 @@ elif OS == "Darwin":
 SPEECH_PATH = BASE_DIR / "speech.mp3"
 SS_PATH     = BASE_DIR / "screenshot" / "ss.jpg"
 TEXT_PATH   = BASE_DIR / "screenshot" / "text.jpg"
+
 def install_model(silent):
     url = "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8x.pt"
     destination = BASE_DIR / "yolov8x.pt"
@@ -54,9 +55,8 @@ def install_model(silent):
             else:
                 if not silent:
                     messagebox.showinfo("Installing...", "yolov8x.pt already exists, skipping download.")
-            FLAG_PATH.touch()  # only run if no exception
+            FLAG_PATH.touch()
         except Exception as e:
-            #set_display_text(f"Download failed: {e}")
             if not silent:
                 messagebox.showerror("Error", f"Download failed: {e}")
 
@@ -146,6 +146,7 @@ class SnippingTool:
                 self.callback(img)
             else:
                 root.deiconify()
+
 # ─────────────────────────────────────────────
 # Set Linux snipping tool
 # ─────────────────────────────────────────────
@@ -160,16 +161,6 @@ class SnippingTool:
             else:
                 self._init_x11()
 
-        # ──────────────────────────────────────────────────────────────
-        # WAYLAND
-        # Detect desktop environment and use the rootropriate native tool:
-        #   KDE Plasma  → spectacle
-        #   GNOME       → gnome-screenshot
-        #   wlroots     → grim + slurp  (Sway, Hyprland, etc.)
-        #   Unknown     → try each in order
-        # All tools open their own native region selector UI —
-        # no tkinter overlay needed on Wayland.
-        # ──────────────────────────────────────────────────────────────
         def _init_wayland(self):
             def _tool_exists(name):
                 return subprocess.run(
@@ -186,7 +177,6 @@ class SnippingTool:
                     desktop = SnippingTool.DESKTOP_SESSION
                     captured = False
 
-                    # ── KDE Plasma Wayland ──
                     if not captured and ('plasma' in desktop or 'kde' in desktop):
                         if _tool_exists('spectacle'):
                             result = subprocess.run(
@@ -204,7 +194,6 @@ class SnippingTool:
                         else:
                             raise FileNotFoundError('spectacle')
 
-                    # ── GNOME Wayland ──
                     if not captured and 'gnome' in desktop:
                         if _tool_exists('gnome-screenshot'):
                             result = subprocess.run(
@@ -222,14 +211,12 @@ class SnippingTool:
                         else:
                             raise FileNotFoundError('gnome-screenshot')
 
-                    # ── wlroots Wayland (Sway, Hyprland, etc.) ──
                     if not captured and _tool_exists('grim') and _tool_exists('slurp'):
                         slurp = subprocess.run(
                             ['slurp'],
                             capture_output=True, text=True
                         )
                         if slurp.returncode != 0:
-                            # User cancelled
                             root.after(0, root.deiconify)
                             return
                         region = slurp.stdout.strip()
@@ -242,9 +229,7 @@ class SnippingTool:
                         else:
                             raise Exception(f'grim failed: {result.stderr.strip()}')
 
-                    # ── Unknown Wayland — try everything ──
                     if not captured:
-                        # Try spectacle
                         if _tool_exists('spectacle'):
                             result = subprocess.run(
                                 ['spectacle', '-r', '-b', '-n', '-o', tmp],
@@ -253,7 +238,6 @@ class SnippingTool:
                             if result.returncode == 0 and os.path.exists(tmp):
                                 captured = True
 
-                        # Try gnome-screenshot
                         if not captured and _tool_exists('gnome-screenshot'):
                             result = subprocess.run(
                                 ['gnome-screenshot', '-a', '-f', tmp],
@@ -262,7 +246,6 @@ class SnippingTool:
                             if result.returncode == 0 and os.path.exists(tmp):
                                 captured = True
 
-                        # Try grim + slurp
                         if not captured and _tool_exists('grim') and _tool_exists('slurp'):
                             slurp = subprocess.run(
                                 ['slurp'], capture_output=True, text=True
@@ -290,7 +273,6 @@ class SnippingTool:
                     root.after(0, lambda: self.callback(img))
 
                 except subprocess.CalledProcessError:
-                    # User cancelled a native selector
                     root.after(0, root.deiconify)
                 except FileNotFoundError as e:
                     name = str(e)
@@ -300,7 +282,7 @@ class SnippingTool:
                             f'Install it with:\n  sudo apt install {name}'
                         )
                     else:
-                        msg = name  # already a full message from the unknown branch
+                        msg = name
                     root.after(0, lambda: messagebox.showerror('Missing dependency', msg))
                     root.after(0, root.deiconify)
                 except Exception as e:
@@ -311,12 +293,6 @@ class SnippingTool:
             root.withdraw()
             threading.Thread(target=capture, daemon=True).start()
 
-        # ──────────────────────────────────────────────────────────────
-        # X11
-        # Takes a desktop screenshot before showing the overlay so the
-        # user can see their screen through it. Crops the selected
-        # region from that image — no second scrot call needed.
-        # ──────────────────────────────────────────────────────────────
         def _init_x11(self):
             try:
                 with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
@@ -356,9 +332,7 @@ class SnippingTool:
             )
             self.canvas.pack(fill='both', expand=True)
 
-            # Screenshot as background so user can see their screen
             self.canvas.create_image(0, 0, anchor='nw', image=self.bg_photo)
-            # Dim overlay via stipple — works without a compositor
             self.canvas.create_rectangle(
                 0, 0, screen_w, screen_h,
                 fill='black', stipple='gray50', outline=''
@@ -405,110 +379,122 @@ class SnippingTool:
             y2 = max(self.start_y, end_y)
 
             if (x2 - x1) > 0 and (y2 - y1) > 0:
-                # Crop from the pre-captured background — no second scrot call
                 img = self.bg_image.crop((x1, y1, x2, y2))
                 self.callback(img)
             else:
                 root.deiconify()
+
 # ─────────────────────────────────────────────
 # Set MacOS (Darwin) snipping tool
 # ─────────────────────────────────────────────
     elif OS == "Darwin":
         def __init__(self, callback):
             self.callback = callback
-            self.snip_surface = tk.Toplevel()
-            self.snip_surface.attributes('-alpha', 0.3)
-            self.snip_surface.attributes('-fullscreen', True)
-            self.snip_surface.attributes("-topmost", True)
-            self.snip_surface.config(cursor="cross")
+            root.withdraw()
 
-            self.canvas = tk.Canvas(self.snip_surface, cursor="cross", bg="grey")
-            self.canvas.pack(fill="both", expand=True)
+            def capture():
+                try:
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+                        tmp = f.name
+                    os.unlink(tmp)
 
-            self.start_x = None
-            self.start_y = None
-            self.rect = None
+                    result = subprocess.run(
+                        ['screencapture', '-i', '-s', tmp],
+                        capture_output=True
+                    )
 
-            self.canvas.bind("<ButtonPress-1>", self.on_button_press)
-            self.canvas.bind("<B1-Motion>", self.on_move_press)
-            self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
+                    print(f"returncode: {result.returncode}")
+                    print(f"file exists: {os.path.exists(tmp)}")
 
-        def on_button_press(self, event):
-            self.start_x = event.x
-            self.start_y = event.y
-            self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, 1, 1, outline='red', width=2)
+                    if result.returncode == 0 and os.path.exists(tmp):
+                        img = Image.open(tmp).copy()
+                        os.unlink(tmp)
+                        print(f"img size: {img.size}, calling callback...")
+                        root.after(0, lambda: callback(img))
+                    else:
+                        print("cancelled or file missing")
+                        root.after(0, root.deiconify)
 
-        def on_move_press(self, event):
-            cur_x, cur_y = (event.x, event.y)
-            self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
+                except Exception as e:
+                    print(f"Exception in capture: {e}")
+                    root.after(0, root.deiconify)
 
-        def on_button_release(self, event):
-            end_x, end_y = (event.x, event.y)
-            self.snip_surface.destroy()
-
-            x1, y1 = min(self.start_x, end_x), min(self.start_y, end_y)
-            x2, y2 = max(self.start_x, end_x), max(self.start_y, end_y)
-            width, height = x2 - x1, y2 - y1
-
-            if width > 0 and height > 0:
-                img = ImageGrab.grab(bbox=(x1, y1, x1 + width, y1 + height))
-                self.callback(img)
-            else:
-                root.deiconify()
+            threading.Thread(target=capture, daemon=True).start()
 
 
 def runobjectrecognition():
-    root.withdraw()
+    if OS != "Darwin":
+        root.withdraw()
+
     def process_yolo(img):
-        SS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        if img.mode == 'RGBA':
-            img = img.convert('RGB')
-        img.save(SS_PATH)
-        model = YOLO("yolov8x.pt")
-        results = model(str(SS_PATH))
+        def run():
+            try:
+                SS_PATH.parent.mkdir(parents=True, exist_ok=True)
+                if img.mode == 'RGBA':
+                    img_converted = img.convert('RGB')
+                else:
+                    img_converted = img
+                img_converted.save(SS_PATH)
+                model = YOLO("yolov8x.pt")
+                results = model(str(SS_PATH))
 
-        # Count detected objects
-        from collections import Counter
-        names = model.names
-        counts = Counter()
-        for r in results:
-            for cls in r.boxes.cls.tolist():
-                counts[names[int(cls)]] += 1
+                from collections import Counter
+                names = model.names
+                counts = Counter()
+                for r in results:
+                    for cls in r.boxes.cls.tolist():
+                        counts[names[int(cls)]] += 1
 
-        if counts:
-            summary = ", ".join(f"{v} {k}" for k, v in counts.items())
-        else:
-            summary = "No objects detected."
+                summary = ", ".join(f"{v} {k}" for k, v in counts.items()) if counts else "No objects detected."
+                print(f"YOLO result: {summary}")
+                root.after(0, lambda: set_display_text(summary))
+                root.after(0, lambda: speak_text(summary, use_gtts_var.get()))
+                root.after(0, root.deiconify)
+            except Exception as e:
+                print(f"YOLO error: {e}")
+                root.after(0, root.deiconify)
 
-        set_display_text(summary)
-        speak_text(summary, use_gtts_var.get())
-        root.deiconify()
+        threading.Thread(target=run, daemon=True).start()
+
     SnippingTool(process_yolo)
 
+
 def runtextrecognition(use_gtts):
-    root.withdraw()
+    if OS != "Darwin":
+        root.withdraw()
+
     def process_ocr(img):
-        TEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        if img.mode == 'RGBA':
-            img = img.convert('RGB')
-        img.save(TEXT_PATH)
-        #set_display_text(f"Image saved. Running OCR on {TEXT_PATH}...")
-        text = pytesseract.image_to_string(Image.open(TEXT_PATH))
-        #set_display_text("--- OCR RESULT ---")
-        set_display_text(text)
-        speak_text(text, use_gtts)
-        root.deiconify()
-        #clean_files() #remove for testing
+        def run():
+            try:
+                TEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
+                if img.mode == 'RGBA':
+                    img_converted = img.convert('RGB')
+                else:
+                    img_converted = img
+                img_converted.save(TEXT_PATH)
+                text = pytesseract.image_to_string(Image.open(TEXT_PATH))
+                print(f"OCR result: {text}")
+                root.after(0, lambda: set_display_text(text))
+                root.after(0, lambda: speak_text(text, use_gtts))
+                root.after(0, root.deiconify)
+            except Exception as e:
+                print(f"OCR error: {e}")
+                root.after(0, root.deiconify)
+
+        threading.Thread(target=run, daemon=True).start()
+
     SnippingTool(process_ocr)
+
 
 # ─────────────────────────────────────────────
 # Main UI
 # ─────────────────────────────────────────────
-customtkinter.set_appearance_mode("System")  
-customtkinter.set_default_color_theme("green")  
+customtkinter.set_appearance_mode("System")
+customtkinter.set_default_color_theme("green")
 
-root = customtkinter.CTk()      
+root = customtkinter.CTk()
 root.geometry("400x300")
+root.update()
 root.title("Intelligent screen reader")
 
 use_gtts_var = tk.BooleanVar(value=False)
@@ -544,18 +530,17 @@ btn_kwargs = dict(
 )
 
 def set_display_text(text):
-    display_box.configure(state="normal")   # unlock
-    display_box.delete("1.0", "end")        # clear
-    display_box.insert("end", text)         # insert new text
-    display_box.configure(state="disabled") # lock again
+    display_box.configure(state="normal")
+    display_box.delete("1.0", "end")
+    display_box.insert("end", text)
+    display_box.configure(state="disabled")
 
-# Tab 1: Settings 
+# Tab 1: Settings
 InstallButton = customtkinter.CTkButton(master=tab1, text="Install model", command=lambda: install_model(False), **btn_kwargs)
 InstallButton.pack(pady=5)
 
 GttsCheckbox = customtkinter.CTkCheckBox(tab1, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var)
 GttsCheckbox.pack(pady=10)
-
 
 # Tab 2: OCR/Object
 ObjectRecogButton = customtkinter.CTkButton(master=tab2, text="Start Object Recognition", command=runobjectrecognition, **btn_kwargs)
