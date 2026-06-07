@@ -17,6 +17,8 @@ import urllib.request
 import subprocess, tempfile
 from PIL import ImageTk
 import customtkinter
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context #need this to fix downloading model issues, weird windows thing
 
 BASE_DIR = Path(__file__).parent
 FLAG_PATH = BASE_DIR / ".model_installed"
