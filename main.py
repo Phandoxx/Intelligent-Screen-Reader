@@ -554,6 +554,20 @@ TextRecogButton.pack(pady=5)
 display_box = customtkinter.CTkTextbox(tab2, height=80, state="disabled", wrap="word")
 display_box.pack(fill="x", padx=10, pady=(5, 0))
 
+#--------------
+pil_image = Image.open("test_image.png")
+
+my_image = customtkinter.CTkImage(
+    light_image=pil_image,
+    dark_image=pil_image, 
+    size=(200, 200)        
+)
+
+#-----------------------
+
+image_label = customtkinter.CTkLabel(master=tab2, image=my_image, text="")
+image_label.pack(pady=10)
+
 # Stop button
 tabview.pack(fill="both", expand=True, padx=0, pady=0)
 
