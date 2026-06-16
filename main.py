@@ -493,25 +493,38 @@ def runtextrecognition(use_gtts):
 
     SnippingTool(process_ocr)
 
+import os
+from PIL import Image
+import customtkinter
+
 def refresh_image():
     try:
-        # 1. Re-open the file (forces PIL to read the file again)
-        new_pil_image = Image.open("screenshot/ss.jpg")
+        # Define paths in a dictionary
+        image_paths = {
+            "text": TEXT_PATH,
+            "object": SS_PATH,
+            "screenshot": "screenshot/ss.jpg"
+        }
         
-        # 2. Re-create the CTkImage wrapper
+        newest_path = max(image_paths.values(), key=os.path.getmtime)
+        
+        # Re-open only the newest file (forces PIL to read the file again)
+        new_pil_image = Image.open(newest_path)
+        
+        # Re-create the CTkImage wrapper
         new_ctk_image = customtkinter.CTkImage(
             light_image=new_pil_image,
             dark_image=new_pil_image,
             size=(200, 200)
         )
         
-        # 3. Apply the new image to existing label
+        # Apply the new image to existing label
         image_label.configure(image=new_ctk_image)
         
-        # 4. Keep a reference to prevent garbage collection
+        # Keep a reference to prevent garbage collection
         image_label.image = new_ctk_image
         
-        print("Image updated successfully!")
+        print(f"Updated successfully with newest image: {newest_path}")
         
     except Exception as e:
         print(f"Error updating image: {e}")
