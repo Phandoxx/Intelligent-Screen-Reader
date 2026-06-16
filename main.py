@@ -18,7 +18,7 @@ import subprocess, tempfile
 from PIL import ImageTk
 import customtkinter
 import ssl
-ssl._create_default_https_context = ssl._create_unverified_context #need this to fix downloading model issues, weird windows thing
+ssl._create_default_https_context = ssl._create_unverified_context
 
 BASE_DIR = Path(__file__).parent
 FLAG_PATH = BASE_DIR / ".model_installed"
@@ -437,6 +437,9 @@ def runobjectrecognition():
                 else:
                     img_converted = img
                 img_converted.save(SS_PATH)
+
+                root.after(0, refresh_image) #update image in UI
+
                 model = YOLO("yolov8x.pt")
                 results = model(str(SS_PATH))
 
@@ -474,6 +477,9 @@ def runtextrecognition(use_gtts):
                 else:
                     img_converted = img
                 img_converted.save(TEXT_PATH)
+                
+                root.after(0, refresh_image) #update image in UI
+
                 text = pytesseract.image_to_string(Image.open(TEXT_PATH))
                 print(f"OCR result: {text}")
                 root.after(0, lambda: set_display_text(text))
@@ -486,6 +492,29 @@ def runtextrecognition(use_gtts):
         threading.Thread(target=run, daemon=True).start()
 
     SnippingTool(process_ocr)
+
+def refresh_image():
+    try:
+        # 1. Re-open the file (forces PIL to read the file again)
+        new_pil_image = Image.open("screenshot/ss.jpg")
+        
+        # 2. Re-create the CTkImage wrapper
+        new_ctk_image = customtkinter.CTkImage(
+            light_image=new_pil_image,
+            dark_image=new_pil_image,
+            size=(200, 200)
+        )
+        
+        # 3. Apply the new image to existing label
+        image_label.configure(image=new_ctk_image)
+        
+        # 4. Keep a reference to prevent garbage collection
+        image_label.image = new_ctk_image
+        
+        print("Image updated successfully!")
+        
+    except Exception as e:
+        print(f"Error updating image: {e}")
 
 
 # ─────────────────────────────────────────────
@@ -555,7 +584,7 @@ display_box = customtkinter.CTkTextbox(tab2, height=80, state="disabled", wrap="
 display_box.pack(fill="x", padx=10, pady=(5, 0))
 
 #--------------
-pil_image = Image.open("test_image.png")
+pil_image = Image.open("screenshot/ss.jpg")
 
 my_image = customtkinter.CTkImage(
     light_image=pil_image,
