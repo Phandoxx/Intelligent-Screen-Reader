@@ -53,7 +53,7 @@ if %errorlevel% == 0 (
 py --version >nul 2>&1
 if %errorlevel% == 0 (
     echo Python found via py launcher.
-    goto install_deps_py
+    goto install_deps
 )
 
 
@@ -93,20 +93,6 @@ python -m pip install pyttsx3
 python -m pip install playsound3
 python -m pip install psutil
 python -m pip install customtkinter
-::start "" pythonw "%~dp0main.py" ::no console
-start "" python "%~dp0main.py" :: console on
-goto end
-
-:install_deps_py
-python -m pip install --upgrade pip
-python -m pip install ultralytics
-python -m pip install pillow
-python -m pip install pytesseract
-python -m pip install pyautogui
-python -m pip install gtts
-python -m pip install pyttsx3
-python -m pip install playsound3
-python -m pip install psutil
 ::start "" pythonw "%~dp0main.py" ::no console
 start "" python "%~dp0main.py" :: console on
 goto end
