@@ -42,6 +42,12 @@ SPEECH_PATH = BASE_DIR / "speech.mp3"
 SS_PATH     = BASE_DIR / "screenshot" / "ss.jpg"
 TEXT_PATH   = BASE_DIR / "screenshot" / "text.jpg"
 
+def create_screenshot_folder():
+    screenshot_folder_path = Path(BASE_DIR)
+    screenshot_folder_path.mkdir("screenshot" ,parents=True, exist_ok=True)
+
+create_screenshot_folder()
+
 def install_model(silent):
     url = "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8x.pt"
     destination = BASE_DIR / "yolov8x.pt"
