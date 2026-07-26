@@ -41,10 +41,12 @@ elif OS == "Darwin":
 SPEECH_PATH = BASE_DIR / "speech.mp3"
 SS_PATH     = BASE_DIR / "screenshot" / "ss.jpg"
 TEXT_PATH   = BASE_DIR / "screenshot" / "text.jpg"
+SS_FOLDER_PATH     = BASE_DIR / "screenshot" 
+
+SS_FOLDER_PATH = BASE_DIR / "screenshot"
 
 def create_screenshot_folder():
-    screenshot_folder_path = Path(BASE_DIR)
-    screenshot_folder_path.mkdir("screenshot" ,parents=True, exist_ok=True)
+    SS_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
 create_screenshot_folder()
 
