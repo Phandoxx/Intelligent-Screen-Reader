@@ -7,7 +7,7 @@ Cross-platform screen reading tool supporting OCR and Object Recognition.
 ## Setup & Installation
 
 ## For linux
----Screenshot tool is based on your linux distros implementation of a screenshot
+Screenshot tool is based on your linux distros implementation of a screenshot
 Run start.sh 
 ## For windows
 Screenshot tool is custom made for windows 
