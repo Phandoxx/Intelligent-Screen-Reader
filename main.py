@@ -507,31 +507,29 @@ import customtkinter
 
 def refresh_image():
     try:
-        # Define paths in a dictionary
         image_paths = {
             "text": TEXT_PATH,
             "object": SS_PATH,
-            "screenshot": "screenshot/ss.jpg"
         }
         
-        newest_path = max(image_paths.values(), key=os.path.getmtime)
+        # Filter for existing files only
+        existing_paths = [p for p in image_paths.values() if p.exists()]
         
-        # Re-open only the newest file (forces PIL to read the file again)
+        if not existing_paths:
+            print("No screenshot images found to refresh.")
+            return
+
+        newest_path = max(existing_paths, key=os.path.getmtime)
+        
         new_pil_image = Image.open(newest_path)
-        
-        # Re-create the CTkImage wrapper
         new_ctk_image = customtkinter.CTkImage(
             light_image=new_pil_image,
             dark_image=new_pil_image,
             size=(200, 200)
         )
         
-        # Apply the new image to existing label
         image_label.configure(image=new_ctk_image)
-        
-        # Keep a reference to prevent garbage collection
         image_label.image = new_ctk_image
-        
         print(f"Updated successfully with newest image: {newest_path}")
         
     except Exception as e:
@@ -605,9 +603,13 @@ display_box = customtkinter.CTkTextbox(tab2, height=80, state="disabled", wrap="
 display_box.pack(fill="x", padx=10, pady=(5, 0))
 
 #--------------
-pil_image = Image.open("screenshot/ss.jpg")
+# Check if the screenshot file exists, otherwise build a 200x200 placeholder image
+if SS_PATH.exists():
+    pil_image = Image.open(SS_PATH)
+else:
+    pil_image = Image.new("RGB", (200, 200), color="#2b2b2b") # blank gray placeholder
 
-my_image = customtkinter.CTkImage(
+my_image = customtkinter.CTkImage( #probbably should make a custom placeholder
     light_image=pil_image,
     dark_image=pil_image, 
     size=(200, 200)        
