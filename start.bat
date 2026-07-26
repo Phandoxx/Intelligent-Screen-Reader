@@ -42,6 +42,24 @@ echo Visual C++ Redistributable is already installed.
 
 :redist_done
 
+:: Check if Tesseract OCR is installed
+if exist "C:\Program Files\Tesseract-OCR\tesseract.exe" goto tesseract_found
+
+echo Tesseract OCR NOT found. Installing via winget...
+winget install --id UB-Mannheim.TesseractOCR --accept-package-agreements --accept-source-agreements --silent
+
+if exist "C:\Program Files\Tesseract-OCR\tesseract.exe" (
+    echo Tesseract OCR installed successfully.
+) else (
+    echo Warning: Tesseract installation could not be verified automatically.
+)
+goto tesseract_done
+
+:tesseract_found
+echo Tesseract OCR is already installed.
+
+:tesseract_done
+
 :: Check if Python is installed
 python --version >nul 2>&1
 if %errorlevel% == 0 (
@@ -55,7 +73,6 @@ if %errorlevel% == 0 (
     echo Python found via py launcher.
     goto install_deps
 )
-
 
 :: Python not found — download and run installer
 echo Python not found. Downloading installer...
@@ -93,8 +110,7 @@ python -m pip install pyttsx3
 python -m pip install playsound3
 python -m pip install psutil
 python -m pip install customtkinter
-::start "" pythonw "%~dp0main.py" ::no console
-start "" python "%~dp0main.py" :: console on
+start "" python "%~dp0main.py"
 goto end
 
 :end
