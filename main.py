@@ -535,6 +535,8 @@ def refresh_image():
     except Exception as e:
         print(f"Error updating image: {e}")
 
+def enlargeImage():
+    print("opened")
 
 # ─────────────────────────────────────────────
 # Main UI
@@ -598,6 +600,9 @@ ObjectRecogButton.pack(pady=5)
 
 TextRecogButton = customtkinter.CTkButton(master=tab2, text="Start Text Recognition", command=lambda: runtextrecognition(use_gtts_var.get()), **btn_kwargs)
 TextRecogButton.pack(pady=5)
+
+EnlargeButton = customtkinter.CTkButton(master=tab2, text="Show screenshot", command=lambda: enlargeImage(), **btn_kwargs)
+EnlargeButton.pack(pady=5)
 
 display_box = customtkinter.CTkTextbox(tab2, height=80, state="disabled", wrap="word")
 display_box.pack(fill="x", padx=10, pady=(5, 0))
