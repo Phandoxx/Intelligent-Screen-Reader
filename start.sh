@@ -18,7 +18,6 @@ else
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             brew install python@3.12
         fi
-        # Set command to the specific Homebrew python3.12 executable if needed
         PYTHON_CMD="python3.12"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if command -v apt-get &>/dev/null; then
