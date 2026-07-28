@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$SCRIPT_DIR/.venv"
 
@@ -68,6 +69,7 @@ fi
 PYTHON_CMD="$VENV_DIR/bin/python"
 PIP_CMD="$VENV_DIR/bin/pip"
 
+# install python dependencies
 echo "Installing Python dependencies..."
 "$PIP_CMD" install --upgrade pip
 "$PIP_CMD" install ultralytics pillow pytesseract pyautogui gtts pyttsx3 playsound3 psutil pi-heif customtkinter
@@ -83,5 +85,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     echo ""
 fi
 
+#launch
 echo "Launching main.py..."
 "$PYTHON_CMD" "$SCRIPT_DIR/main.py"
