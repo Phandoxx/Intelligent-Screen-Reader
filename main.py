@@ -536,13 +536,55 @@ def refresh_image():
         print(f"Error updating image: {e}")
 
 def enlargeImage():
-    print("opened")
+    # Gather existing image paths
+    image_paths = {
+        "text": TEXT_PATH,
+        "object": SS_PATH,
+    }
+    existing_paths = [p for p in image_paths.values() if p.exists()]
+
+    # If no screenshots exist yet, show an error message
+    if not existing_paths:
+        messagebox.showinfo("No Image", "No screenshots have been captured yet.")
+        return
+
+    # Find the path of the most recently modified image (that way it doesn't get the OCR if Object recog was last for example)
+    newest_path = max(existing_paths, key=os.path.getmtime)
+
+    # Open the image using PIL to read its dimensions
+    pil_image = Image.open(newest_path)
+    img_w, img_h = pil_image.size
+
+    # Create the popup window
+    popup = customtkinter.CTkToplevel(root)
+    popup.title(f"Screenshot Viewer - {newest_path.name}")
+    
+    # Keep the popup on top of the main application window
+    popup.attributes("-topmost", True)
+
+    # Convert PIL Image to CTkImage preserving full resolution
+    full_ctk_image = customtkinter.CTkImage(
+        light_image=pil_image,
+        dark_image=pil_image,
+        size=(img_w, img_h)
+    )
+
+    # Display image in a label inside the popup
+    popup_label = customtkinter.CTkLabel(master=popup, image=full_ctk_image, text="")
+    popup_label.image = full_ctk_image  # Keep reference to avoid garbage collection
+    popup_label.pack(padx=10, pady=10, expand=True, fill="both")
 
 # ─────────────────────────────────────────────
 # Main UI
 # ─────────────────────────────────────────────
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("green")
+
+# Scale all UI elements and windows by 200% (2x)
+#lowkey surprised me that this function exists becuase its really useful for this case
+
+customtkinter.set_widget_scaling(2.0)  # Scales buttons, fonts, checkboxes, padding, etc.
+customtkinter.set_window_scaling(2.0)  # Scales window dimensions and layout scaling
 
 root = customtkinter.CTk()
 root.geometry("400x300")
