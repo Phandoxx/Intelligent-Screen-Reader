@@ -432,7 +432,7 @@ class SnippingTool:
             threading.Thread(target=capture, daemon=True).start()
 
 
-def runobjectrecognition():
+def run_object_recognition():
     if OS != "Darwin":
         root.withdraw()
 
@@ -472,7 +472,7 @@ def runobjectrecognition():
     SnippingTool(process_yolo)
 
 
-def runtextrecognition(use_gtts):
+def run_text_recognition(use_gtts):
     if OS != "Darwin":
         root.withdraw()
 
@@ -535,7 +535,7 @@ def refresh_image():
     except Exception as e:
         print(f"Error updating image: {e}")
 
-def enlargeImage():
+def enlarge_image():
     # Gather existing image paths
     image_paths = {
         "text": TEXT_PATH,
@@ -630,21 +630,21 @@ def set_display_text(text):
     display_box.configure(state="disabled")
 
 # Tab 1: Settings
-InstallButton = customtkinter.CTkButton(master=tab1, text="Install model", command=lambda: install_model(False), **btn_kwargs)
-InstallButton.pack(pady=5)
+install_button = customtkinter.CTkButton(master=tab1, text="Install model", command=lambda: install_model(False), **btn_kwargs)
+install_button.pack(pady=5)
 
-GttsCheckbox = customtkinter.CTkCheckBox(tab1, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var)
-GttsCheckbox.pack(pady=10)
+gtts_checkbox = customtkinter.CTkCheckBox(tab1, text="Use High Quality Voice, non-local (gTTS)", variable=use_gtts_var)
+gtts_checkbox.pack(pady=10)
 
 # Tab 2: OCR/Object
-ObjectRecogButton = customtkinter.CTkButton(master=tab2, text="Start Object Recognition", command=runobjectrecognition, **btn_kwargs)
-ObjectRecogButton.pack(pady=5)
+object_recog_button = customtkinter.CTkButton(master=tab2, text="Start Object Recognition", command=run_object_recognition, **btn_kwargs)
+object_recog_button.pack(pady=5)
 
-TextRecogButton = customtkinter.CTkButton(master=tab2, text="Start Text Recognition", command=lambda: runtextrecognition(use_gtts_var.get()), **btn_kwargs)
-TextRecogButton.pack(pady=5)
+text_recog_button = customtkinter.CTkButton(master=tab2, text="Start Text Recognition", command=lambda: run_text_recognition(use_gtts_var.get()), **btn_kwargs)
+text_recog_button.pack(pady=5)
 
-EnlargeButton = customtkinter.CTkButton(master=tab2, text="Show screenshot", command=lambda: enlargeImage(), **btn_kwargs)
-EnlargeButton.pack(pady=5)
+enlarge_button = customtkinter.CTkButton(master=tab2, text="Show screenshot", command=lambda: enlarge_image(), **btn_kwargs)
+enlarge_button.pack(pady=5)
 
 display_box = customtkinter.CTkTextbox(tab2, height=80, state="disabled", wrap="word")
 display_box.pack(fill="x", padx=10, pady=(5, 0))
@@ -670,8 +670,8 @@ image_label.pack(pady=10)
 # Stop button
 tabview.pack(fill="both", expand=True, padx=0, pady=0)
 
-StopButton = customtkinter.CTkButton(master=root, text="Stop", command=root.destroy, **btn_kwargs)
-StopButton.pack(pady=5)
+stop_button = customtkinter.CTkButton(master=root, text="Stop", command=root.destroy, **btn_kwargs)
+stop_button.pack(pady=5)
 
 root.after(100, first_run_check)
 root.mainloop()
